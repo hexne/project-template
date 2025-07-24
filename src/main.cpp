@@ -81,38 +81,37 @@ void create_main_file() {
 int main(int argc, char *argv[]) {
 
     ArgsParser args_parser(argc, argv);
-    args_parser.parser();
-    args_parser.add_args("123", "123");
-    args_parser.add_args("123", "123", [] {
-
+    args_parser.add_args("-a", "--all", [] {
+        std::cout << "all" << std::endl;
     });
-    // param.add_support_arg("-a", "--all", [] {
-    //     std::cout << "all" << std::endl;
-    // });
-    //
-    // param.add_support_arg("-e", "--exe", [&] {
-    //     flags.exe = true;
-    // });
-    // param.add_support_arg("-m", "--module", [&] {
-    //     flags.module = true;
-    // });
-    // param.add_support_arg("-s", "--static_lib", [&] {
-    //     flags.static_lib = true;
-    // });
-    // param.add_support_arg("-d", "--dynamic_lib", [&] {
-    //     flags.dynamic_lib = true;
-    // });
-    // param.add_support_arg("-q", "--qt", [&] {
-    //     flags.qt = true;
-    // });
-    // param.add_support_arg("-h", "--help", [&] {
-    //     std::cout << "param : \n"
-    //               << "";
-    // });
-    // param.add_support_val("cmake-version");
-    //
-    // param.analyze();
+    
+    args_parser.add_args("-e", "--exe", [&] {
+        flags.exe = true;
+    });
+    args_parser.add_args("-m", "--module", [&] {
+        flags.module = true;
+    });
+    args_parser.add_args("-s", "--static_lib", [&] {
+        flags.static_lib = true;
+    });
+    args_parser.add_args("-d", "--dynamic_lib", [&] {
+        flags.dynamic_lib = true;
+    });
+    args_parser.add_args("-q", "--qt", [&] {
+        flags.qt = true;
+    });
+    args_parser.add_args("-h", "--help", [&] {
+        std::cout << "args_parser : \n"
+                  << "";
+    });
+    args_parser.add_args("cmake-version");
+    
+    args_parser.parser();
 
+    std::cout << args_parser["cmake-version"].value << std::endl;
+    std::cout << args_parser["-q"].enable << std::endl;
+    std::cout << args_parser["-h"].enable << std::endl;
+    std::cout << args_parser.other_arg().size() << std::endl;
 
 
 
