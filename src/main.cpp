@@ -12,9 +12,15 @@ struct Flags {
     bool module = true;
     bool static_lib{};
     bool dynamic_lib{};
+    bool github_project{};
 } flags;
 
+ArgsParser args_parser;
+
 std::string get_cmake_version() {
+    if (args_parser["cmake-version"].enable)
+        return args_parser["cmake-version"].value;
+
     auto cmake_version_out = Command::run("cmake --version");
     std::vector<int> version_num(3);
     if (std::sscanf(cmake_version_out.data(), "cmake version %d.%d.%d",
@@ -23,9 +29,25 @@ std::string get_cmake_version() {
 
     std::string ret;
     for (int i = 0;i < version_num.size() - 1; ++i)
-        ret += std::to_string(version_num[i]) + ' ';
+        ret += std::to_string(version_num[i]) + '.';
     ret += std::to_string(version_num.back());
     return ret;
+}
+
+std::string get_project_name() {
+    if (args_parser.other_arg().empty())
+        return "untitled";
+    return args_parser.other_arg().front();
+}
+std::filesystem::path get_project_path() {
+    if (args_parser.other_arg().size() < 2)
+        return ".";
+    return args_parser.other_arg()[1];
+}
+std::string get_cxx_version() {
+    if (args_parser["cxx-version"].enable)
+        return args_parser["cxx-version"].value;
+    return "23";
 }
 
 /**
@@ -36,9 +58,11 @@ std::string enable_import_std() {
     std::string ret;
     if (cmake_version == "4.0.0" || cmake_version == "4.0.1" || cmake_version == "4.0.2") {
         ret = R"(set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457"))";
+        ret += '\n';
     }
     else if (cmake_version == "4.0.3") {
         ret = R"(set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444"))";
+        ret += '\n';
     }
     else {
         throw std::runtime_error("cmake version is unsupported");
@@ -47,44 +71,76 @@ std::string enable_import_std() {
     return ret;
 }
 
-void create_cmake_file() {
-    std::string cmake_file_contents;
-    cmake_file_contents += "cmake_minimum_required(VERSION 4.0.0)\n";
-    cmake_file_contents += "set(CMAKE_CXX_STANDARD 23)\n";
-    cmake_file_contents += enable_import_std();
-    cmake_file_contents += "project(untitled)\n";
-
-    if (flags.exe) {
-        cmake_file_contents += "add_executable(${PROJECT_NAME}\n";
-        cmake_file_contents += "    src/main.cpp\n";
-        cmake_file_contents += ")";
-    }
-    else if (flags.static_lib) {
-        cmake_file_contents += "add_library(${PROJECT_NAME} STATIC)\n";
-        cmake_file_contents += "target_sources(${PROJECT_NAME} PRIVATE\n";
-        cmake_file_contents += "    src/lib.cpp\n";
-        cmake_file_contents += ")\n";
-    }
-    else if (flags.dynamic_lib) {
-        cmake_file_contents += "add_library(${PROJECT_NAME} SHARED)\n";
-        cmake_file_contents += "target_sources(${PROJECT_NAME} PRIVATE\n";
-        cmake_file_contents += "    src/lib.cpp\n";
-        cmake_file_contents += ")\n";
-    }
+void create_main_file(const std::string &file) {
+    std::ofstream out(file);
+    out << std::string {
+        #embed "main-template.txt"
+    };
 }
 
-void create_main_file() {
+void create_cmake_file(const std::string &file) {
+    std::ofstream out(file);
 
 
+    std::string cmake_file_contents;
+    cmake_file_contents +=  "cmake_minimum_required(VERSION 4.0.0)\n"
+                            "set(CMAKE_CXX_STANDARD " + get_cxx_version() + ")\n" +
+                            enable_import_std() + "\n"
+                            "project(" + get_project_name() + ")\n\n";
+
+    cmake_file_contents += std::string {
+        // #embed "module-template.txt"
+        ""
+    };
+
+    if (flags.exe) {
+        cmake_file_contents +=  "add_executable(${PROJECT_NAME}\n"
+                                "    src/main.cpp\n"
+                                ")\n\n";
+    }
+
+    cmake_file_contents +=  "# target_link_libraries(${PROJECT_NAME}\n"
+                            "#     module\n"
+                            "# )\n";
+
+    out << cmake_file_contents;
+}
+
+// project-name/src/main.cpp
+// project-name/CMakeLists.txt
+// project-name/.gitignore(github 选项)
+// project-name/LICENSE(github 选项)
+// project-name/README.md（github 选项）
+void create_project_files() {
+    auto project_dir = get_project_path() / get_project_name();
+
+    create_main_file(project_dir / "src/main.cpp");
+    create_cmake_file(project_dir / "CMakeLists.txt");
+
+}
+
+// project-name
+//     src/
+void create_project_struct() {
+
+    auto project_dir = get_project_path() / get_project_name();
+    // @TODO 测试文件是否生成正确
+    // if (std::filesystem::exists(project_dir))
+        // throw std::runtime_error(project_dir.string() + " already exists");
+
+    std::filesystem::create_directory(project_dir);
+    std::filesystem::create_directory(project_dir / "src");
+}
+
+
+void create_project() {
+    create_project_struct();
+    create_project_files();
 }
 
 int main(int argc, char *argv[]) {
+    args_parser = ArgsParser(argc, argv);
 
-    ArgsParser args_parser(argc, argv);
-    args_parser.add_args("-a", "--all", [] {
-        std::cout << "all" << std::endl;
-    });
-    
     args_parser.add_args("-e", "--exe", [&] {
         flags.exe = true;
     });
@@ -100,20 +156,19 @@ int main(int argc, char *argv[]) {
     args_parser.add_args("-q", "--qt", [&] {
         flags.qt = true;
     });
+    args_parser.add_args("-g", "--github", [&] {
+        flags.github_project = true;
+
+    });
     args_parser.add_args("-h", "--help", [&] {
         std::cout << "args_parser : \n"
-                  << "";
+                     "";
     });
-    args_parser.add_args("cmake-version");
+    args_parser.add_args("cmake-version", "cxx-version");
     
     args_parser.parser();
 
-    std::cout << args_parser["cmake-version"].value << std::endl;
-    std::cout << args_parser["-q"].enable << std::endl;
-    std::cout << args_parser["-h"].enable << std::endl;
-    std::cout << args_parser.other_arg().size() << std::endl;
-
-
+    create_project();
 
     return 0;
 }

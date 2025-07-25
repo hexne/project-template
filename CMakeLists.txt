@@ -3,18 +3,21 @@ cmake_minimum_required(VERSION 4.0.0)
 set(CMAKE_CXX_STANDARD 26)
 # 根据cmake版本查找对应uuid https://github.com/Kitware/CMake/blob/v4.0.3/Help/dev/experimental.rst
 # 4.0.2
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
+# set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
 # 4.0.3
-# set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 set(CMAKE_CXX_MODULE_STD 1)
 
-project(untitled)
+project(project-template)
+
+add_compile_options(--embed-dir=${CMAKE_CURRENT_SOURCE_DIR}/res) # ok
+
 
 # ===========================================
 # C++模块
 # ===========================================
 file(GLOB module_files "src/*.cppm")
-add_library(module STATIC)  # STATIC/SHARED
+add_library(module STATIC)
 target_sources(module
         PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
