@@ -12,17 +12,17 @@ import std;
 export class Command {
     std::string command_;
     std::string command_out_;
-    std::shared_ptr<FILE> pfile_{};
 public:
     explicit Command(std::string command) : command_(std::move(command)) {  }
 
     std::string run() {
-        pfile_.reset(popen(command_.data(),"r"));
-        if (!pfile_)
+        auto pfile = popen(command_.data(),"r");
+        if (!pfile)
             throw std::runtime_error("popen() failed!");
         char buffer[512] = "";
-        while(fgets(buffer,sizeof(buffer),pfile_.get()))
+        while(fgets(buffer,sizeof(buffer),pfile))
             command_out_ += buffer;
+        fclose(pfile);
         return command_out_;
     }
     static std::string run(std::string command) {
