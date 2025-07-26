@@ -89,8 +89,7 @@ void create_cmake_file(const std::string &file) {
                             "project(" + get_project_name() + ")\n\n";
 
     cmake_file_contents += std::string {
-        // #embed "module-template.txt"
-        ""
+         #embed "module-template.txt"
     };
 
     if (flags.exe) {
@@ -99,7 +98,9 @@ void create_cmake_file(const std::string &file) {
                                 ")\n\n";
     }
 
-    cmake_file_contents +=  "# target_link_libraries(${PROJECT_NAME}\n"
+
+    cmake_file_contents +=  "link_directories(${PROJECT_SOURCE_DIR}/lib)\n"
+                            "# target_link_libraries(${PROJECT_NAME}\n"
                             "#     module\n"
                             "# )\n";
 
