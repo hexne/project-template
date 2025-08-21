@@ -18,6 +18,12 @@ struct Arg {
     std::function<void()> callback;
     bool enable{};
     std::string value;
+    std::vector<std::string> split_value(const std::string& ch) {
+        std::vector<std::string> ret;
+        for (auto str : value | std::ranges::views::split(ch))
+            ret.emplace_back(str.begin(), str.end());
+        return ret;
+    }
 };
 
 // 参数parser_callback : 是否在解析程序参数时调用相应的callback
