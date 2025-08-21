@@ -17,5 +17,6 @@ export struct Config {
     std::filesystem::path project_path; // -project_path=
     std::string cmake_version; // -cmake_version
     std::vector<std::string> depend; // -depend=qt,opencv
-};
-export extern Config project_config;
+} config;
+
+// export Config project_config;

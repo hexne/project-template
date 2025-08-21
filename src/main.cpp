@@ -28,8 +28,8 @@ std::filesystem::path get_project_path() {
     return args_parser.other_arg()[1];
 }
 int get_cxx_version() {
-    if (args_parser["cxx-version"].enable)
-        return std::stoi(args_parser["cxx-version"].value);
+    if (args_parser["cxx_version"].enable)
+        return std::stoi(args_parser["cxx_version"].value);
     return std::stoi("23");
 }
 
@@ -95,23 +95,23 @@ void create_project_files() {
     auto project_dir = get_project_path() / get_project_name();
 
     create_main_file(project_dir / "src/main.cpp");
-    create_cmake_file(project_dir / "CMakeLists.txt");
+    create_cmake_file(project_dir);
 
-    if (project_config.is_module)
-        create_module_file(project_dir / "src/module.cpp");
+    if (config.is_module)
+        create_module_file(project_dir / "src/module.cppm");
 }
 
 // project-name
 //     src/
 //     include/(非module模式下创建)
 void create_project_struct() {
-    auto project_dir = project_config.project_path / project_config.project_name;
+    auto project_dir = config.project_path / config.project_name;
     if (std::filesystem::exists(project_dir))
         throw std::runtime_error(project_dir.string() + " already exists");
 
     std::filesystem::create_directory(project_dir);
     std::filesystem::create_directory(project_dir / "src");
-    if (!project_config.is_module)
+    if (!config.is_module)
         std::filesystem::create_directory(project_dir / "include");
 }
 
@@ -123,23 +123,23 @@ void create_project() {
 int main(int argc, char *argv[]) {
     args_parser = ArgsParser(argc, argv);
 
-    args_parser.add_args("-m", "--module", [] {
-        project_config.is_module = true;
+    args_parser.add_args("-m", "--module", [&] {
+        config.is_module = true;
     });
-    args_parser.add_args("-e", "--exe", [] {
-        project_config.is_exe = true;
+    args_parser.add_args("-e", "--exe", [&] {
+        config.is_exe = true;
     });
-    args_parser.add_args("--sl", "--static",[] {
-        project_config.is_static_lib = true;
+    args_parser.add_args("--sl", "--static",[&] {
+        config.is_static_lib = true;
     });
-    args_parser.add_args("--dl", "--dynamic",[] {
-        project_config.is_shared_lib = true;
+    args_parser.add_args("--dl", "--dynamic",[&] {
+        config.is_shared_lib = true;
     });
-    args_parser.add_args("-g", "--github",[] {
-        project_config.enable_github = true;
+    args_parser.add_args("-g", "--github",[&] {
+        config.enable_github = true;
     });
 
-    args_parser.add_args("-h", "--help",[] {
+    args_parser.add_args("-h", "--help",[&] {
         std::cout <<"-m --module, this project enable c++ module\n"
                     "-e --exe, this project is exe\n"
                     "-g --github, this project is a github repo\n"
@@ -159,13 +159,16 @@ int main(int argc, char *argv[]) {
     args_parser.add_args("depend");
 
     args_parser.parser();
-    project_config.project_name = get_project_name();
-    project_config.project_path = get_project_path();
-    project_config.cxx_version = get_cxx_version();
+    config.project_name = get_project_name();
+    config.project_path = get_project_path();
+    config.cxx_version = get_cxx_version();
     if (args_parser["cmake_version"].enable)
-        project_config.cmake_version = args_parser["cmake_version"].value;
+        config.cmake_version = args_parser["cmake_version"].value;
 
     create_project();
+
+    Config test;
+    test.is_module = true;
 
     return 0;
 }
